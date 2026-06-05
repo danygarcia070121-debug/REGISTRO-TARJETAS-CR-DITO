@@ -278,27 +278,30 @@ const cardKey=c=>`lf_card_${c}_${curAnio}_${curMes}`;
 const cfgKey=c=>`lf_cfg_${c}`;
 const deudasKey=()=>`lf_deudas`;
 
+function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(k,d){try{localStorage.setItem(k,JSON.stringify(d));}catch(e){}}
+
 async function loadAll(){
   state={txs:[],presupuestos:[],deudas:[],cards:{}};
-  try{const r=await window.storage.get(txKey());if(r)state.txs=JSON.parse(r.value);}catch(e){}
-  try{const r=await window.storage.get(presKey());if(r)state.presupuestos=JSON.parse(r.value);}catch(e){}
-  try{const r=await window.storage.get(deudasKey());if(r)state.deudas=JSON.parse(r.value);}catch(e){}
+  state.txs        = lsGet(txKey())    || [];
+  state.presupuestos = lsGet(presKey()) || [];
+  state.deudas     = lsGet(deudasKey()) || [];
   if(!Array.isArray(state.deudas))state.deudas=[];
   for(const c of CARDS){
     state.cards[c]={limit:0,tope:0,expenses:[]};
-    try{const r=await window.storage.get(cfgKey(c));if(r){const d=JSON.parse(r.value);state.cards[c].limit=d.limit||0;state.cards[c].tope=d.tope||0;}}catch(e){}
-    try{const r=await window.storage.get(cardKey(c));if(r)state.cards[c].expenses=JSON.parse(r.value);}catch(e){}
+    const cfg=lsGet(cfgKey(c));
+    if(cfg){state.cards[c].limit=cfg.limit||0;state.cards[c].tope=cfg.tope||0;}
+    state.cards[c].expenses=lsGet(cardKey(c))||[];
   }
   updateMesLabel();buildAllPanels();renderAll();
 }
-async function sv(k,d){try{await window.storage.set(k,JSON.stringify(d));}catch(e){}}
+async function sv(k,d){lsSet(k,d);}
 function updateMesLabel(){document.getElementById('mes-label').textContent=MESES[curMes]+' '+curAnio;}
 async function changeMes(d){
   curMes+=d;if(curMes>11){curMes=0;curAnio++;}if(curMes<0){curMes=11;curAnio--;}
-  state.txs=[];state.presupuestos=[];
-  try{const r=await window.storage.get(txKey());if(r)state.txs=JSON.parse(r.value);}catch(e){}
-  try{const r=await window.storage.get(presKey());if(r)state.presupuestos=JSON.parse(r.value);}catch(e){}
-  for(const c of CARDS){state.cards[c].expenses=[];try{const r=await window.storage.get(cardKey(c));if(r)state.cards[c].expenses=JSON.parse(r.value);}catch(e){}}
+  state.txs         = lsGet(txKey())    || [];
+  state.presupuestos= lsGet(presKey())  || [];
+  for(const c of CARDS){state.cards[c].expenses=lsGet(cardKey(c))||[];}
   updateMesLabel();renderAll();
 }
 function switchTab(t){
