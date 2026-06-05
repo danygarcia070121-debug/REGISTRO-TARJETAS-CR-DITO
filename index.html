@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAB Wallet</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',sans-serif; background:#0f0f1a; color:#fff; min-height:100vh; }
+
+.header { text-align:center; padding:20px 16px 8px; }
+.header h1 { font-size:1.5rem; font-weight:700; letter-spacing:2px; }
+.header p { color:#666; font-size:0.72rem; margin-top:3px; }
+
+.mes-bar { display:flex; align-items:center; justify-content:center; gap:12px; padding:10px 16px 14px; }
+.mes-btn { background:#1a1a2e; border:1px solid #333; color:#fff; width:34px; height:34px; border-radius:50%; font-size:1.1rem; cursor:pointer; transition:all 0.2s; }
+.mes-btn:hover { border-color:#555; }
+.mes-label { font-size:1rem; font-weight:700; letter-spacing:1px; min-width:170px; text-align:center; }
+
+.tabs { display:flex; gap:6px; padding:0 16px 14px; justify-content:center; flex-wrap:wrap; }
+.tab-btn { flex:1; max-width:110px; padding:9px 6px; border:none; border-radius:12px; font-size:0.68rem; font-weight:700; cursor:pointer; transition:all 0.2s; letter-spacing:0.5px; }
+.tab-btn.visa   { background:#1a3a6e; color:#4d9fff; border:2px solid #1a3a6e; }
+.tab-btn.visa.active   { background:#1565C0; color:#fff; border-color:#4d9fff; box-shadow:0 0 14px #4d9fff44; }
+.tab-btn.master { background:#3a1a1a; color:#ff8c42; border:2px solid #3a1a1a; }
+.tab-btn.master.active { background:#b71c1c; color:#fff; border-color:#ff8c42; box-shadow:0 0 14px #ff8c4244; }
+.tab-btn.amex   { background:#1a2e1a; color:#66bb6a; border:2px solid #1a2e1a; }
+.tab-btn.amex.active   { background:#1b5e20; color:#fff; border-color:#66bb6a; box-shadow:0 0 14px #66bb6a44; }
+.tab-btn.global { background:#2a1a3e; color:#ce93d8; border:2px solid #2a1a3e; }
+.tab-btn.global.active { background:#6a1b9a; color:#fff; border-color:#ce93d8; box-shadow:0 0 14px #ce93d844; }
+
+.card-panel { display:none; padding:0 16px 24px; animation:fadeIn 0.3s ease; }
+.card-panel.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* CARD VISUAL */
+.card-visual { border-radius:18px; padding:20px; margin-bottom:14px; position:relative; overflow:hidden; min-height:128px; }
+.card-visual.visa   { background:linear-gradient(135deg,#0d47a1,#1565C0,#1976D2); }
+.card-visual.master { background:linear-gradient(135deg,#7f0000,#b71c1c,#c62828); }
+.card-visual.amex   { background:linear-gradient(135deg,#1a3a1a,#1b5e20,#2e7d32); }
+.card-visual::before { content:''; position:absolute; right:-30px; top:-30px; width:130px; height:130px; border-radius:50%; background:rgba(255,255,255,0.05); }
+.card-name  { font-size:0.66rem; letter-spacing:2px; opacity:0.8; margin-bottom:4px; }
+.card-bank  { font-size:0.6rem; opacity:0.55; margin-bottom:10px; }
+.card-limit-display { font-size:1.4rem; font-weight:700; margin-bottom:3px; }
+.card-available { font-size:0.76rem; opacity:0.85; }
+.card-badge { position:absolute; top:14px; right:14px; font-size:0.6rem; font-weight:700; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.15); letter-spacing:1px; }
+
+.progress-container { margin-bottom:12px; }
+.progress-labels { display:flex; justify-content:space-between; font-size:0.67rem; color:#888; margin-bottom:5px; }
+.progress-bar  { height:7px; background:#222; border-radius:10px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:10px; transition:width 0.5s,background 0.3s; }
+
+.alert-box { padding:9px 13px; border-radius:10px; font-size:0.74rem; margin-bottom:12px; display:none; font-weight:600; align-items:center; gap:8px; }
+.alert-box.warning { background:#ff8c4222; border:1px solid #ff8c42; color:#ff8c42; display:flex; }
+.alert-box.danger  { background:#ff000022; border:1px solid #ff4444; color:#ff4444; display:flex; }
+
+.summary-row { display:flex; justify-content:space-between; background:#1a1a2e; border-radius:10px; padding:9px 13px; margin-bottom:7px; font-size:0.77rem; }
+.summary-row span:last-child { font-weight:700; }
+
+.cat-section { background:#1a1a2e; border-radius:14px; padding:14px; margin-bottom:14px; }
+.cat-section h3 { font-size:0.7rem; color:#888; letter-spacing:1px; margin-bottom:10px; text-transform:uppercase; }
+.cat-row { margin-bottom:8px; }
+.cat-label { display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px; }
+.cat-bar  { height:6px; background:#222; border-radius:6px; overflow:hidden; }
+.cat-fill { height:100%; border-radius:6px; transition:width 0.4s; }
+.cat-empty { font-size:0.73rem; color:#555; text-align:center; padding:8px 0; }
+
+.config-section { background:#1a1a2e; border-radius:14px; padding:14px; margin-bottom:14px; }
+.config-section h3 { font-size:0.7rem; color:#888; letter-spacing:1px; margin-bottom:10px; text-transform:uppercase; }
+.config-row { display:flex; gap:8px; }
+.config-row input { flex:1; background:#0f0f1a; border:1px solid #333; border-radius:8px; padding:9px 11px; color:#fff; font-size:0.76rem; outline:none; }
+.config-row input:focus { border-color:#555; }
+.config-row input::placeholder { color:#555; }
+.btn-save { padding:9px 13px; border:none; border-radius:8px; cursor:pointer; font-size:0.73rem; font-weight:700; transition:all 0.2s; white-space:nowrap; }
+.visa-s   .btn-save { background:#1565C0; color:#fff; }
+.master-s .btn-save { background:#b71c1c; color:#fff; }
+.amex-s   .btn-save { background:#2e7d32; color:#fff; }
+
+.add-section { background:#1a1a2e; border-radius:14px; padding:14px; margin-bottom:14px; }
+.add-section h3 { font-size:0.7rem; color:#888; letter-spacing:1px; margin-bottom:10px; text-transform:uppercase; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+.form-grid input, .form-grid select { background:#0f0f1a; border:1px solid #333; border-radius:8px; padding:9px 11px; color:#fff; font-size:0.75rem; outline:none; }
+.form-grid input::placeholder { color:#555; }
+.form-grid select option { background:#1a1a2e; }
+.form-grid .full { grid-column:1/-1; }
+.btn-add { width:100%; padding:11px; border:none; border-radius:10px; font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.visa-s   .btn-add { background:#1565C0; color:#fff; }
+.master-s .btn-add { background:#b71c1c; color:#fff; }
+.amex-s   .btn-add { background:#2e7d32; color:#fff; }
+.btn-add:hover { opacity:0.85; transform:translateY(-1px); }
+
+.expenses-section h3 { font-size:0.7rem; color:#888; letter-spacing:1px; margin-bottom:10px; text-transform:uppercase; }
+.expense-item { background:#1a1a2e; border-radius:12px; padding:11px 13px; margin-bottom:7px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.expense-info { flex:1; min-width:0; }
+.expense-top  { display:flex; align-items:center; gap:7px; margin-bottom:2px; flex-wrap:wrap; }
+.expense-desc { font-size:0.8rem; font-weight:600; }
+.cat-chip { font-size:0.58rem; padding:2px 7px; border-radius:20px; font-weight:700; white-space:nowrap; flex-shrink:0; }
+.expense-dates { font-size:0.63rem; color:#666; }
+.expense-amount { font-size:0.88rem; font-weight:700; flex-shrink:0; }
+.btn-del { background:#ff444422; border:1px solid #ff4444; color:#ff4444; border-radius:6px; padding:4px 9px; font-size:0.66rem; cursor:pointer; }
+.btn-del:hover { background:#ff444444; }
+.empty-state { text-align:center; color:#555; font-size:0.76rem; padding:20px 0; }
+
+/* GLOBAL */
+.global-hero { background:linear-gradient(135deg,#1a0a2e,#2a1045,#1a0a2e); border-radius:18px; padding:22px; margin-bottom:16px; text-align:center; }
+.global-hero .g-title { font-size:0.68rem; letter-spacing:2px; color:#ce93d8; margin-bottom:8px; }
+.global-hero .g-total { font-size:2rem; font-weight:800; margin-bottom:4px; }
+.global-hero .g-sub   { font-size:0.78rem; color:#aaa; }
+
+.global-cards { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:16px; }
+.g-card { border-radius:14px; padding:14px 10px; text-align:center; }
+.g-card.visa   { background:#0d47a122; border:1px solid #1565C044; }
+.g-card.master { background:#7f000022; border:1px solid #b71c1c44; }
+.g-card.amex   { background:#1b5e2022; border:1px solid #2e7d3244; }
+.g-card .gc-name { font-size:0.6rem; letter-spacing:1px; opacity:0.7; margin-bottom:6px; }
+.g-card .gc-spent { font-size:0.95rem; font-weight:700; margin-bottom:3px; }
+.g-card .gc-pct   { font-size:0.65rem; color:#888; }
+.g-card .gc-bar   { height:4px; background:#222; border-radius:4px; overflow:hidden; margin-top:6px; }
+.g-card .gc-fill  { height:100%; border-radius:4px; }
+
+.global-section { background:#1a1a2e; border-radius:14px; padding:14px; margin-bottom:14px; }
+.global-section h3 { font-size:0.7rem; color:#888; letter-spacing:1px; margin-bottom:12px; text-transform:uppercase; }
+.g-limit-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #222; font-size:0.78rem; }
+.g-limit-row:last-child { border-bottom:none; }
+.g-limit-row .gl-name { color:#aaa; }
+.g-limit-row .gl-val  { font-weight:700; }
+.g-limit-row .gl-avail { font-size:0.7rem; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>💳 LAB WALLET</h1>
+  <p>Control de Tarjetas de Crédito · Bancolombia</p>
+</div>
+
+<div class="mes-bar">
+  <button class="mes-btn" onclick="changeMes(-1)">‹</button>
+  <div class="mes-label" id="mes-label">—</div>
+  <button class="mes-btn" onclick="changeMes(1)">›</button>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn global active" onclick="switchTab('global')">RESUMEN</button>
+  <button class="tab-btn visa"          onclick="switchTab('visa')">VISA</button>
+  <button class="tab-btn master"        onclick="switchTab('master')">MASTER ORO</button>
+  <button class="tab-btn amex"          onclick="switchTab('amex')">AMEX GREEN</button>
+</div>
+
+<div id="panel-global" class="card-panel active"><div id="inner-global"></div></div>
+<div id="panel-visa"   class="card-panel"><div class="visa-s"   id="inner-visa"></div></div>
+<div id="panel-master" class="card-panel"><div class="master-s" id="inner-master"></div></div>
+<div id="panel-amex"   class="card-panel"><div class="amex-s"   id="inner-amex"></div></div>
+
+<script>
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const CARDS = ['visa','master','amex'];
+const CARD_NAMES  = { visa:'VISA CLÁSICA', master:'MASTERCARD ORO', amex:'AMEX GREEN' };
+const CARD_BADGE  = { visa:'VISA', master:'ORO', amex:'AMEX' };
+const CARD_COLORS = { visa:'#4d9fff', master:'#ff8c42', amex:'#66bb6a' };
+
+const CATS = [
+  { id:'comida',         label:'🍔 Comida',          color:'#ff8c42' },
+  { id:'transporte',     label:'🚗 Transporte',       color:'#4d9fff' },
+  { id:'salud',          label:'💊 Salud',            color:'#66bb6a' },
+  { id:'ropa',           label:'👗 Ropa',             color:'#ce93d8' },
+  { id:'entretenimiento',label:'🎮 Entretenimiento',  color:'#f48fb1' },
+  { id:'servicios',      label:'💡 Servicios',        color:'#80cbc4' },
+  { id:'negocio',        label:'💼 Negocio',          color:'#ffca28' },
+  { id:'viajes',         label:'✈️ Viajes',           color:'#4fc3f7' },
+  { id:'mascotas',       label:'🐾 Mascotas',         color:'#ffb74d' },
+  { id:'otro',           label:'📦 Otro',             color:'#aaa'    },
+];
+
+const now = new Date();
+let curMes = now.getMonth(), curAnio = now.getFullYear();
+let state = {};
+
+function mesKey(card) { return `labwallet_${card}_${curAnio}_${curMes}`; }
+function cfgKey(card) { return `labwallet_cfg_${card}`; }
+
+async function loadAll() {
+  for (const c of CARDS) {
+    state[c] = { limit:0, tope:0, expenses:[] };
+    try { const r = await window.storage.get(cfgKey(c)); if(r){ const d=JSON.parse(r.value); state[c].limit=d.limit||0; state[c].tope=d.tope||0; } } catch(e){}
+    try { const r = await window.storage.get(mesKey(c)); if(r) state[c].expenses=JSON.parse(r.value); } catch(e){}
+  }
+  updateMesLabel();
+  CARDS.forEach(buildPanel);
+  buildGlobal();
+  CARDS.forEach(renderCard);
+  renderGlobal();
+}
+
+async function saveCfg(card) {
+  try { await window.storage.set(cfgKey(card), JSON.stringify({limit:state[card].limit,tope:state[card].tope})); } catch(e){}
+}
+async function saveExpenses(card) {
+  try { await window.storage.set(mesKey(card), JSON.stringify(state[card].expenses)); } catch(e){}
+}
+
+function updateMesLabel() {
+  document.getElementById('mes-label').textContent = MESES[curMes] + ' ' + curAnio;
+}
+
+async function changeMes(dir) {
+  curMes += dir;
+  if(curMes>11){ curMes=0; curAnio++; }
+  if(curMes<0) { curMes=11; curAnio--; }
+  updateMesLabel();
+  for (const c of CARDS) {
+    state[c].expenses = [];
+    try { const r = await window.storage.get(mesKey(c)); if(r) state[c].expenses=JSON.parse(r.value); } catch(e){}
+  }
+  CARDS.forEach(renderCard);
+  renderGlobal();
+}
+
+function switchTab(t) {
+  ['global',...CARDS].forEach(c => {
+    document.getElementById('panel-'+c).classList.remove('active');
+    document.querySelector('.tab-btn.'+(c==='master'?'master':c)).classList.remove('active');
+  });
+  document.getElementById('panel-'+t).classList.add('active');
+  document.querySelector('.tab-btn.'+(t==='master'?'master':t)).classList.add('active');
+}
+
+function fmt(n) { return '$'+Math.round(n).toLocaleString('es-CO'); }
+function catInfo(id) { return CATS.find(c=>c.id===id)||CATS[CATS.length-1]; }
+
+/* BUILD STATIC HTML */
+function buildPanel(card) {
+  const el = document.getElementById('inner-'+card);
+  const opts = CATS.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  el.innerHTML = `
+    <div class="card-visual ${card}">
+      <div class="card-name">${CARD_NAMES[card]}</div>
+      <div class="card-bank">BANCOLOMBIA</div>
+      <div class="card-limit-display" id="${card}-spent-display">$0</div>
+      <div class="card-available" id="${card}-avail-display">Configura tu límite</div>
+      <div class="card-badge">${CARD_BADGE[card]}</div>
+    </div>
+    <div class="progress-container">
+      <div class="progress-labels"><span>Gastado</span><span id="${card}-pct">0%</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="${card}-bar" style="width:0%;background:#4caf50"></div></div>
+    </div>
+    <div class="alert-box" id="${card}-alert"></div>
+    <div class="summary-row"><span>Límite total</span><span id="${card}-limit-show">— COP</span></div>
+    <div class="summary-row"><span>Tope de alerta</span><span id="${card}-tope-show">— COP</span></div>
+    <div class="config-section">
+      <h3>⚙️ Configurar Límites del Mes</h3>
+      <div class="config-row">
+        <input type="number" id="${card}-limit" placeholder="Límite total">
+        <input type="number" id="${card}-tope"  placeholder="Alerta en...">
+        <button class="btn-save" onclick="saveConfig('${card}')">Guardar</button>
+      </div>
+    </div>
+    <div class="cat-section"><h3>📊 Gastos por Categoría</h3><div id="${card}-cats"></div></div>
+    <div class="add-section">
+      <h3>➕ Registrar Gasto</h3>
+      <div class="form-grid">
+        <input type="text"   id="${card}-desc"        placeholder="Descripción" class="full">
+        <select              id="${card}-cat"          class="full">${opts}</select>
+        <input type="number" id="${card}-monto"        placeholder="Monto COP" class="full">
+        <div style="display:flex;flex-direction:column;gap:2px;grid-column:1/-1">
+          <label style="font-size:0.65rem;color:#666;padding-left:2px">Fecha del gasto</label>
+          <input type="date" id="${card}-fecha-gasto" style="width:100%">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;grid-column:1/-1">
+          <label style="font-size:0.65rem;color:#666;padding-left:2px">Fecha de pago</label>
+          <input type="date" id="${card}-fecha-pago" style="width:100%">
+        </div>
+      </div>
+      <button class="btn-add" onclick="addExpense('${card}')">+ Agregar Gasto</button>
+    </div>
+    <div class="expenses-section"><h3>📋 Historial de Gastos</h3><div id="${card}-list"></div></div>`;
+}
+
+function buildGlobal() {
+  document.getElementById('inner-global').innerHTML = `
+    <div style="padding:0 0 4px">
+      <div class="global-hero">
+        <div class="g-title">GASTO TOTAL DEL MES</div>
+        <div class="g-total" id="g-total">$0</div>
+        <div class="g-sub"   id="g-sub">—</div>
+      </div>
+      <div class="global-cards">
+        ${CARDS.map(c=>`
+        <div class="g-card ${c}">
+          <div class="gc-name">${CARD_BADGE[c]}</div>
+          <div class="gc-spent" id="g-${c}-spent">$0</div>
+          <div class="gc-pct"   id="g-${c}-pct">0%</div>
+          <div class="gc-bar"><div class="gc-fill" id="g-${c}-fill" style="width:0%;background:${CARD_COLORS[c]}"></div></div>
+        </div>`).join('')}
+      </div>
+      <div class="global-section">
+        <h3>💳 Estado por Tarjeta</h3>
+        <div id="g-limits"></div>
+      </div>
+      <div class="cat-section">
+        <h3>📊 Categorías (todas las tarjetas)</h3>
+        <div id="g-cats"></div>
+      </div>
+    </div>`;
+}
+
+/* RENDER */
+function saveConfig(card) {
+  const limit = parseFloat(document.getElementById(card+'-limit').value)||0;
+  const tope  = parseFloat(document.getElementById(card+'-tope').value)||0;
+  if(!limit){ alert('Ingresa un límite total válido'); return; }
+  state[card].limit=limit; state[card].tope=tope;
+  saveCfg(card); renderCard(card); renderGlobal();
+  document.getElementById(card+'-limit').value='';
+  document.getElementById(card+'-tope').value='';
+}
+
+function addExpense(card) {
+  const desc  = document.getElementById(card+'-desc').value.trim();
+  const monto = parseFloat(document.getElementById(card+'-monto').value);
+  const cat   = document.getElementById(card+'-cat').value;
+  const fg    = document.getElementById(card+'-fecha-gasto').value;
+  const fp    = document.getElementById(card+'-fecha-pago').value;
+  if(!desc||!monto||monto<=0){ alert('Completa descripción y monto'); return; }
+  state[card].expenses.push({id:Date.now(),desc,monto,cat,fg,fp});
+  saveExpenses(card); renderCard(card); renderGlobal();
+  document.getElementById(card+'-desc').value='';
+  document.getElementById(card+'-monto').value='';
+  document.getElementById(card+'-fecha-gasto').value='';
+  document.getElementById(card+'-fecha-pago').value='';
+}
+
+function deleteExpense(card,id) {
+  state[card].expenses=state[card].expenses.filter(e=>e.id!==id);
+  saveExpenses(card); renderCard(card); renderGlobal();
+}
+
+function renderCard(card) {
+  const d = state[card];
+  const total = d.expenses.reduce((s,e)=>s+e.monto,0);
+  const avail = d.limit - total;
+  const pct   = d.limit>0 ? Math.min((total/d.limit)*100,100) : 0;
+
+  document.getElementById(card+'-spent-display').textContent = fmt(total);
+  document.getElementById(card+'-avail-display').textContent =
+    d.limit>0 ? 'Disponible: '+fmt(Math.max(avail,0)) : 'Configura tu límite';
+  document.getElementById(card+'-limit-show').textContent = d.limit>0 ? fmt(d.limit) : '— COP';
+  document.getElementById(card+'-tope-show').textContent  = d.tope>0  ? fmt(d.tope)  : '— COP';
+
+  let color='#4caf50';
+  if(pct>=100) color='#f44336';
+  else if((d.tope>0&&total>=d.tope)||pct>=70) color='#ff9800';
+  const bar=document.getElementById(card+'-bar');
+  bar.style.width=pct+'%'; bar.style.background=color;
+  document.getElementById(card+'-pct').textContent=Math.round(pct)+'%';
+
+  const alertEl=document.getElementById(card+'-alert');
+  alertEl.className='alert-box'; alertEl.style.display='none';
+  if(total>=d.limit&&d.limit>0){
+    alertEl.className='alert-box danger'; alertEl.style.display='flex';
+    alertEl.innerHTML='🚨 ¡LÍMITE SUPERADO! Gastado '+fmt(total)+' de '+fmt(d.limit);
+  } else if(d.tope>0&&total>=d.tope){
+    alertEl.className='alert-box warning'; alertEl.style.display='flex';
+    alertEl.innerHTML='⚠️ Tope de alerta alcanzado ('+fmt(d.tope)+'). Gastado: '+fmt(total);
+  }
+
+  // Cat chart
+  const catTotals={};
+  d.expenses.forEach(e=>{ catTotals[e.cat]=(catTotals[e.cat]||0)+e.monto; });
+  const catsEl=document.getElementById(card+'-cats');
+  const entries=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length){ catsEl.innerHTML='<div class="cat-empty">Sin datos aún</div>'; }
+  else {
+    const maxAmt=entries[0][1];
+    catsEl.innerHTML=entries.map(([id,amt])=>{
+      const ci=catInfo(id), w=Math.round((amt/total)*100);
+      return `<div class="cat-row">
+        <div class="cat-label"><span>${ci.label}</span><span style="color:${ci.color}">${fmt(amt)} <span style="color:#555;font-size:0.63rem">${w}%</span></span></div>
+        <div class="cat-bar"><div class="cat-fill" style="width:${Math.round((amt/maxAmt)*100)}%;background:${ci.color}"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Historial
+  const listEl=document.getElementById(card+'-list');
+  if(!d.expenses.length){ listEl.innerHTML='<div class="empty-state">Sin gastos este mes</div>'; return; }
+  listEl.innerHTML=[...d.expenses].reverse().map(e=>{
+    const ci=catInfo(e.cat);
+    return `<div class="expense-item">
+      <div class="expense-info">
+        <div class="expense-top">
+          <div class="expense-desc">${e.desc}</div>
+          <span class="cat-chip" style="background:${ci.color}22;color:${ci.color};border:1px solid ${ci.color}44">${ci.label}</span>
+        </div>
+        <div class="expense-dates">${e.fg?'📅 '+e.fg:''}${e.fp?' · 💳 Pago: '+e.fp:''}</div>
+      </div>
+      <span class="expense-amount">${fmt(e.monto)}</span>
+      <button class="btn-del" onclick="deleteExpense('${card}',${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderGlobal() {
+  const totals   = CARDS.map(c=>state[c].expenses.reduce((s,e)=>s+e.monto,0));
+  const limits   = CARDS.map(c=>state[c].limit);
+  const grandTotal = totals.reduce((a,b)=>a+b,0);
+  const grandLimit = limits.reduce((a,b)=>a+b,0);
+
+  document.getElementById('g-total').textContent = fmt(grandTotal);
+  document.getElementById('g-sub').textContent   =
+    grandLimit>0 ? 'Límite combinado: '+fmt(grandLimit)+' · Disponible: '+fmt(Math.max(grandLimit-grandTotal,0)) : 'Configura los límites en cada tarjeta';
+
+  // Mini cards
+  CARDS.forEach((c,i)=>{
+    const pct = limits[i]>0 ? Math.min((totals[i]/limits[i])*100,100) : 0;
+    document.getElementById('g-'+c+'-spent').textContent = fmt(totals[i]);
+    document.getElementById('g-'+c+'-pct').textContent   = limits[i]>0 ? Math.round(pct)+'% usado' : 'sin límite';
+    document.getElementById('g-'+c+'-fill').style.width  = pct+'%';
+  });
+
+  // Estado por tarjeta
+  document.getElementById('g-limits').innerHTML = CARDS.map((c,i)=>{
+    const avail = limits[i]>0 ? Math.max(limits[i]-totals[i],0) : null;
+    const d = state[c];
+    let statusColor = '#4caf50', statusText = 'OK';
+    if(limits[i]>0){
+      const p=(totals[i]/limits[i])*100;
+      if(p>=100){ statusColor='#f44336'; statusText='SUPERADO'; }
+      else if((d.tope>0&&totals[i]>=d.tope)||p>=70){ statusColor='#ff9800'; statusText='ALERTA'; }
+    }
+    return `<div class="g-limit-row">
+      <span class="gl-name" style="color:${CARD_COLORS[c]}">${CARD_NAMES[c]}</span>
+      <span class="gl-val">${fmt(totals[i])}</span>
+      <span class="gl-avail" style="color:${avail!==null?'#aaa':'#555'}">${avail!==null?'Disp: '+fmt(avail):'—'}</span>
+      <span style="color:${statusColor};font-size:0.65rem;font-weight:700">${statusText}</span>
+    </div>`;
+  }).join('');
+
+  // Cat global
+  const allCats={};
+  CARDS.forEach(c=>state[c].expenses.forEach(e=>{ allCats[e.cat]=(allCats[e.cat]||0)+e.monto; }));
+  const gCatsEl=document.getElementById('g-cats');
+  const gEntries=Object.entries(allCats).sort((a,b)=>b[1]-a[1]);
+  if(!gEntries.length){ gCatsEl.innerHTML='<div class="cat-empty">Sin datos aún</div>'; }
+  else {
+    const gMax=gEntries[0][1];
+    gCatsEl.innerHTML=gEntries.map(([id,amt])=>{
+      const ci=catInfo(id), w=Math.round((amt/grandTotal)*100);
+      return `<div class="cat-row">
+        <div class="cat-label"><span>${ci.label}</span><span style="color:${ci.color}">${fmt(amt)} <span style="color:#555;font-size:0.63rem">${w}%</span></span></div>
+        <div class="cat-bar"><div class="cat-fill" style="width:${Math.round((amt/gMax)*100)}%;background:${ci.color}"></div></div>
+      </div>`;
+    }).join('');
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>
